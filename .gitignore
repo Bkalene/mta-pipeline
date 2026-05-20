@@ -1,0 +1,32 @@
+# Ambientes e Segredos
+.env
+Senha banco de dados supabase.txt
+.env.local
+.env.*.local
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+ENV/
+.venv/
+
+# Dados Locais (Gerados Sinteticamente)
+data/
+
+# IDEs e Editores
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+
+# Pastas de Agente/Sistema
+.agent/
+.system_generated/
