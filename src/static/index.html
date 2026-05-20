@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MTA Pipeline - Dashboard de Atribuição Multicanal</title>
+    <meta name="description" content="Dashboard analítico de atribuição multicanal com modelos de Markov, Last Touch, First Touch e Linear. Monitore ROAS, CAC e otimize investimentos em mídia paga.">
+    <!-- Google Fonts: Outfit -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Boxicons -->
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+    <!-- Styles -->
+    <link rel="stylesheet" href="styles.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="toast-container" aria-live="polite"></div>
+
+    <!-- Overlay de carregamento -->
+    <div id="loading-overlay" class="loading-overlay hidden">
+        <div class="spinner-container">
+            <div class="spinner-ring"></div>
+            <p>Processando Pipeline de Dados</p>
+            <span class="loading-sub">Conectando ao Supabase e recalculando modelos...</span>
+        </div>
+    </div>
+
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo-area">
+                    <div class="logo-icon-wrapper">
+                        <i class='bx bx-analyse'></i>
+                    </div>
+                    <span class="logo-text">MTA<span>Pipeline</span></span>
+                </div>
+            </div>
+
+            <nav class="sidebar-nav">
+                <a href="#" class="nav-item active" id="nav-dashboard">
+                    <i class='bx bx-grid-alt'></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#section-kpis" class="nav-item" id="nav-kpis">
+                    <i class='bx bx-bar-chart-square'></i>
+                    <span>KPIs Globais</span>
+                </a>
+                <a href="#section-charts" class="nav-item" id="nav-charts">
+                    <i class='bx bx-line-chart'></i>
+                    <span>Gráficos</span>
+                </a>
+                <a href="#section-comparison" class="nav-item" id="nav-comparison">
+                    <i class='bx bx-git-compare'></i>
+                    <span>Comparação</span>
+                </a>
+                <a href="#section-optimizer" class="nav-item" id="nav-optimizer">
+                    <i class='bx bx-target-lock'></i>
+                    <span>Otimizador</span>
+                </a>
+                <div class="nav-divider"></div>
+                <a href="/docs" target="_blank" class="nav-item">
+                    <i class='bx bx-code-alt'></i>
+                    <span>Swagger Docs</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="pipeline-status" id="pipeline-status">
+                    <div class="status-dot status-dot--idle" id="status-dot"></div>
+                    <span id="status-text">Aguardando dados</span>
+                </div>
+                <button id="btn-ingest" class="btn-action btn-ingest">
+                    <i class='bx bx-refresh' id="ingest-icon"></i>
+                    <span>Regerar &amp; Ingerir</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Área Principal -->
+        <main class="main-content">
+
+            <!-- Topbar -->
+            <header class="topbar">
+                <div class="header-title">
+                    <h1>Visão Geral de Atribuição</h1>
+                    <p>Monitore o desempenho multicanal e otimize verbas com modelos estatísticos avançados</p>
+                </div>
+                <div class="header-controls">
+                    <label for="model-selector" class="control-label">Modelo Ativo:</label>
+                    <div class="select-wrapper">
+                        <select id="model-selector">
+                            <option value="markov" selected>Cadeia de Markov (Probabilístico)</option>
+                            <option value="last_touch">Last Touch (Último Clique)</option>
+                            <option value="first_touch">First Touch (Primeiro Clique)</option>
+                            <option value="linear">Atribuição Linear</option>
+                        </select>
+                        <i class='bx bx-chevron-down select-arrow'></i>
+                    </div>
+                    <button class="btn-refresh-mini" id="btn-refresh" title="Atualizar dados">
+                        <i class='bx bx-refresh'></i>
+                    </button>
+                </div>
+            </header>
+
+            <!-- KPIs Globais -->
+            <section class="kpi-grid" id="section-kpis">
+                <div class="kpi-card" id="kpi-card-spend">
+                    <div class="kpi-card-header">
+                        <span>Investimento Total</span>
+                        <div class="kpi-icon-wrapper spend-icon">
+                            <i class='bx bx-dollar-circle'></i>
+                        </div>
+                    </div>
+                    <div class="kpi-card-value" id="kpi-total-spend">—</div>
+                    <div class="kpi-card-footer">
+                        <span class="trend-neutral"><i class='bx bx-money-withdraw'></i> Investimento em mídia paga</span>
+                    </div>
+                </div>
+
+                <div class="kpi-card" id="kpi-card-revenue">
+                    <div class="kpi-card-header">
+                        <span>Receita Atribuída</span>
+                        <div class="kpi-icon-wrapper revenue-icon">
+                            <i class='bx bx-trending-up'></i>
+                        </div>
+                    </div>
+                    <div class="kpi-card-value" id="kpi-total-revenue">—</div>
+                    <div class="kpi-card-footer">
+                        <span class="trend-positive"><i class='bx bx-check-circle'></i> Retorno financeiro estimado</span>
+                    </div>
+                </div>
+
+                <div class="kpi-card" id="kpi-card-roas">
+                    <div class="kpi-card-header">
+                        <span>ROAS Geral</span>
+                        <div class="kpi-icon-wrapper roas-icon">
+                            <i class='bx bx-calculator'></i>
+                        </div>
+                    </div>
+                    <div class="kpi-card-value" id="kpi-overall-roas">—</div>
+                    <div class="kpi-card-footer">
+                        <span id="kpi-roas-status" class="trend-neutral">Multiplicador do mix geral</span>
+                    </div>
+                </div>
+
+                <div class="kpi-card" id="kpi-card-conv">
+                    <div class="kpi-card-header">
+                        <span>Conversões Totais</span>
+                        <div class="kpi-icon-wrapper conv-icon">
+                            <i class='bx bx-trophy'></i>
+                        </div>
+                    </div>
+                    <div class="kpi-card-value" id="kpi-total-conv">—</div>
+                    <div class="kpi-card-footer">
+                        <span class="trend-neutral"><i class='bx bx-user-check'></i> Conversões atribuídas ao modelo</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Gráficos principais -->
+            <section class="visuals-grid" id="section-charts">
+                <div class="chart-container-card">
+                    <div class="card-header">
+                        <h3><i class='bx bx-bar-chart-alt-2'></i> Receita Atribuída vs Investimento por Canal</h3>
+                        <div class="card-header-actions">
+                            <span class="chart-model-tag" id="bar-chart-model-tag">Markov</span>
+                        </div>
+                    </div>
+                    <div class="chart-wrapper">
+                        <canvas id="chart-attribution-bars"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-container-card">
+                    <div class="card-header">
+                        <h3><i class='bx bx-pie-chart-alt-2'></i> Mix de Distribuição de Receita</h3>
+                    </div>
+                    <div class="chart-wrapper">
+                        <canvas id="chart-attribution-pie"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Seção de Comparação de Modelos -->
+            <section class="comparison-section" id="section-comparison">
+                <div class="chart-container-card full-width">
+                    <div class="card-header">
+                        <h3><i class='bx bx-git-compare'></i> Comparação de ROAS entre Modelos de Atribuição</h3>
+                        <p class="card-subtitle">Visualize como cada modelo avalia o desempenho dos canais de forma diferente</p>
+                    </div>
+                    <div class="chart-wrapper chart-wrapper--tall">
+                        <canvas id="chart-model-comparison"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tabela do Otimizador -->
+            <section class="optimizer-section" id="section-optimizer">
+                <div class="table-container-card">
+                    <div class="card-header table-header-flex">
+                        <div>
+                            <h3><i class='bx bx-target-lock'></i> Recomendações de Otimização de Mídia</h3>
+                            <p class="card-subtitle">Análise heurística baseada em desvios do ROAS médio do mix pago</p>
+                        </div>
+                        <div class="table-header-badges">
+                            <div class="roas-badge" id="average-roas-badge">ROAS Médio Pago: —</div>
+                        </div>
+                    </div>
+                    <div class="table-wrapper">
+                        <table class="data-table" id="optimizer-table">
+                            <thead>
+                                <tr>
+                                    <th>Canal</th>
+                                    <th>Custo Atual</th>
+                                    <th>ROAS Atribuído</th>
+                                    <th>Desempenho</th>
+                                    <th>Ação Recomendada</th>
+                                    <th>Ajuste de Verba</th>
+                                    <th>Justificativa Analítica</th>
+                                </tr>
+                            </thead>
+                            <tbody id="optimizer-table-body">
+                                <tr>
+                                    <td colspan="7" class="loading-row">
+                                        <i class='bx bx-loader-alt bx-spin' style="font-size: 1.5rem; display: block; margin-bottom: 8px;"></i>
+                                        Aguardando conexão com o banco de dados...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

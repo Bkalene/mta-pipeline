@@ -1,6 +1,7 @@
 import os
 import uvicorn
 from fastapi import FastAPI, Query, HTTPException
+from fastapi.staticfiles import StaticFiles
 from src.data_generator import generate_synthetic_data
 from src.data_ingestion import init_db, ingest_raw_data
 from src.attribution_models import get_attribution_report
@@ -10,6 +11,9 @@ app = FastAPI(
     description="API para consultar métricas de atribuição multicanal e otimização de investimentos de marketing.",
     version="1.0.0"
 )
+
+# Montar a pasta de arquivos estáticos para o dashboard
+app.mount("/dashboard", StaticFiles(directory="src/static", html=True), name="dashboard")
 
 @app.get("/")
 def read_root():
